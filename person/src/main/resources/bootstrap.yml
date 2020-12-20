@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: CONFIG-CLIENT
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: /Users/edoatley/code/cfg
+server:
+  port: 8888
