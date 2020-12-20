@@ -7,14 +7,15 @@ import com.edoatley.person.repository.PersonRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.context.support.WithSecurityContext;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -23,8 +24,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import static com.edoatley.person.util.TestData.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
 @ExtendWith(SpringExtension.class)
 @WebFluxTest
@@ -74,18 +76,31 @@ class PersonRoutingTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(username = "ed", roles = {"ADMIN"})
     @DisplayName("Add person")
+    void testAddPerson() {
+        given(personRepository.insert(any(Publisher.class))).willReturn(Flux.just((JON)));
+
+        Person actual = webClient.post().uri("/people").contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(JON))
+                .exchange()
+                .expectStatus().isCreated()
+                .returnResult(Person.class)
+                .getResponseBody().blockFirst();
+
+        assertThat(actual).isEqualTo(JON);
+    }
+
+    @Test
+    @WithAnonymousUser
+    @DisplayName("Fail to add person anon")
     void testRequireAuthentication() {
-        Flux<Person> people = Flux.just(ED, HANNAH, JON);
-        given(personRepository.insert(JON)).willReturn(Mono.just(JON));
+        given(personRepository.insert(any(Publisher.class))).willReturn(Flux.just((JON)));
 
         webClient.post().uri("/people").contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(JON))
                 .exchange()
-                .expectStatus().isOk()
-                .expectBody(Person.class)
-                .isEqualTo(ED);
+                .expectStatus().isForbidden();
     }
 
 }

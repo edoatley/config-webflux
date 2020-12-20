@@ -16,16 +16,12 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-//        http.csrf().disable()
-//                .authorizeExchange()
-//                .pathMatchers(HttpMethod.POST, "/person").hasRole("ADMIN")
-//                .pathMatchers("/**").permitAll()
-//                .and()
-//                .httpBasic();
-        http.httpBasic().disable()
-                .formLogin().disable()
-                .csrf().disable()
-                .logout().disable();
+        http.csrf().disable()
+                .authorizeExchange()
+                .pathMatchers(HttpMethod.POST, "/person").hasRole("ADMIN")
+                .pathMatchers(HttpMethod.GET, "/**").permitAll()
+                .and()
+                .httpBasic();
         return http.build();
     }
 
