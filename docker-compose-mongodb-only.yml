@@ -1,0 +1,15 @@
+version: '3'
+services:
+  mongodb:
+    image:  mongo:4.2.6 #  Mirroring: versions
+    container_name: mongo_db
+    environment:
+      - MONGO_INITDB_Database=people
+      - MONGO_INITDB_ROOT_Username=mongoadmin
+      - MONGO_INITDB_ROOT_Password=secret
+    volumes:
+      - ./mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./mongo/mongo-volume:/data/db
+    ports:
+      - "27017-27019:27017-27019"
+    restart: always

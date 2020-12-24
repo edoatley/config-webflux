@@ -20,6 +20,7 @@
 
 ## Step 5 
 
+* look at Graal VM
 * Run in k8s
 
 ## Step 6
