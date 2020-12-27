@@ -20,4 +20,4 @@ logging:
     reactor.ipc.netty.http: DEBUG
     org.springframework.http.server.reactive.ReactorHttpHandlerAdapter: DEBUG
     org.mongodb.driver: ERROR
-    org.springframework.security: DEBUG
+    org.springframework.security: WARN

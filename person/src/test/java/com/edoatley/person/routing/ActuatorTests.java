@@ -2,9 +2,11 @@ package com.edoatley.person.routing;
 
 import com.edoatley.person.handler.PersonHandler;
 import com.edoatley.person.repository.PersonRepository;
+import com.mongodb.reactivestreams.client.MongoClient;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -22,6 +24,10 @@ class ActuatorTests {
 
     @MockBean
     PersonRepository personRepository;
+
+    // required for health check
+    @MockBean
+    MongoClient client;
 
     @Autowired
     private WebTestClient webClient;

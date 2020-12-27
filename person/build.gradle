@@ -2,6 +2,11 @@ plugins {
     id 'org.springframework.boot' version "$springBootVersion"
     id 'io.spring.dependency-management' version "$dependencyManagementVersion"
     id 'java'
+    id "org.unbroken-dome.test-sets" version "3.0.1"
+}
+
+testSets {
+    integrationTest
 }
 
 configurations {
@@ -35,6 +40,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    integrationTestImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo'
 }
 
 dependencyManagement {
@@ -44,6 +50,6 @@ dependencyManagement {
     }
 }
 
-test {
+tasks.withType(Test) {
     useJUnitPlatform()
 }

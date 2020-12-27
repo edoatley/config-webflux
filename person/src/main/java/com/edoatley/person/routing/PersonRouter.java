@@ -17,6 +17,7 @@ public class PersonRouter {
     RouterFunction<ServerResponse> peopleRoutes(PersonHandler personHandler) {
         return RouterFunctions.route()
             .GET("/people/{id}", personHandler::getPersonById)
+            .GET("/people", request -> request.queryParams().containsKey("name"), personHandler::peopleByName)
             .GET("/people", personHandler::getAllPeople)
             .POST("/people", personHandler::createPerson)
             .GET("/ping", request -> ok().body(fromValue("pong")))
