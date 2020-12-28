@@ -27,7 +27,7 @@ public class PersonHandler {
     public Mono<ServerResponse> createPerson(ServerRequest request) {
         log.info("Creating a person");
         Mono<Person> personMono = request.bodyToMono(Person.class);
-        return personMono.flatMap(student ->
+        return personMono.flatMap(person ->
                 ServerResponse.status(HttpStatus.CREATED)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(personRepository.insert(personMono), Person.class));

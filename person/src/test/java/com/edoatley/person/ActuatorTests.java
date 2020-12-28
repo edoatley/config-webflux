@@ -1,4 +1,4 @@
-package com.edoatley.person.routing;
+package com.edoatley.person;
 
 import com.edoatley.person.handler.PersonHandler;
 import com.edoatley.person.repository.PersonRepository;

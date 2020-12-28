@@ -1,0 +1,16 @@
+logging:
+  level:
+    org.springframework.boot.autoconfigure.mongo.embedded: TRACE
+    org.springframework.security: WARN
+    reactor.netty.http.client: DEBUG
+    org.mongodb.driver: DEBUG
+    com.edoatley.person: DEBUG
+#spring:
+#  data:
+#    mongodb:
+#      authentication-database: admin
+#      username: user1
+#      password: password1
+#      database: testppl
+#      port: 27077
+#      host: localhost

@@ -1,3 +1,5 @@
 rootProject.name = 'config-webflux'
 include 'config-server'
 include 'person'
+include 'greeting'
+

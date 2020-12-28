@@ -4,14 +4,14 @@
 
 * Set up multimodule project
 * Set up webflux API 
-* Set up a simple config server
 
 ## Step 2 
 
-* Enrich the info actuator with some extra data API
+* Set up a simple config server
 
 ## Step 3 
 
+* Enrich the info actuator with some extra data API
 * Test that the enriched data works
 
 ## Step 4

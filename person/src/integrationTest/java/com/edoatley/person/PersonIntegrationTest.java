@@ -1,34 +1,27 @@
 package com.edoatley.person;
 
 import com.edoatley.person.entity.Person;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
+import com.edoatley.person.repository.PersonRepository;
+import com.mongodb.reactivestreams.client.MongoClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.util.Base64Utils;
-import org.springframework.web.reactive.function.BodyExtractors;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
-import java.awt.print.Book;
-import java.util.function.Supplier;
+import java.util.List;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.web.reactive.function.BodyInserters.fromValue;
 
 
 @ActiveProfiles("integration-test")
@@ -42,89 +35,31 @@ class PersonIntegrationTest {
     @LocalServerPort
     int port;
 
-    @Value("${admin.user.name}")
-    private String userName;
-    @Value("${admin.user.password}")
-    private String password;
+    @Autowired
+    private WebTestClient webTestClient;
 
-    private WebClient webClient;
+    @Autowired
+    private MongoClient client;
 
-    @BeforeEach
-    void initClient() {
-        webClient = WebClient.builder()
-                .baseUrl("http://localhost:" + port)
-                .filters(exchangeFilterFunctions -> {
-                    exchangeFilterFunctions.add(logRequest());
-                    exchangeFilterFunctions.add(logResponse());
-                })
-                .build();
-    }
+    @Autowired
+    PersonRepository personRepository;
 
     @Test
-    @DisplayName("Save a person and read it back")
-    public void testSaveAndRetrieve() {
+    @DisplayName("Save a person")
+    @WithMockUser(username = "ed", roles = {"ADMIN"})
+    void saveAPerson() {
+        log.info("Mon Client " + client.getClusterDescription().getShortDescription());
 
-        // given
-        Person person = webClient.post()
-                .uri("/people")
-//                .header(AUTHENTICATION, basicAuthHeader())
-                .header("Authorization", "Basic " + Base64Utils
-                        .encodeToString(("ed:password").getBytes(UTF_8)))
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.just(new Person("3600DBE26F924A699D1850CE10A091F2", "Robert")), Person.class)
-                .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, ClientResponse::createException)
-                .onStatus(HttpStatus::is5xxServerError, ClientResponse::createException)
-                .bodyToMono(Person.class).block();
-//
-//        // when
-//        Mono<Person> savedPersonMono = webClient.get().uri("/people/{id}", person.getId())
-////                .header(AUTHENTICATION, this::basicAuthHeader)
-//                .header("Authorization", "Basic " + Base64Utils
-//                        .encodeToString(("ed:password").getBytes(UTF_8)))
-//                .retrieve()
-//                .onStatus(HttpStatus::is4xxClientError, ClientResponse::createException)
-//                .onStatus(HttpStatus::is5xxServerError, ClientResponse::createException)
-//                .bodyToMono(Person.class);
-//
-//        // then
-//        assertThat(savedPersonMono.block()).as("Posted Person should equal retrieved one").isEqualTo(personToSave);
-    }
+        personRepository.findAll().subscribe(p -> log.info(p.getName()));
 
-//    private String basicAuthHeader() {
-//        return () -> "Basic " + Base64Utils.encodeToString(("ed:password").getBytes(UTF_8));
-//        System.err.println(result);
-//        String plainTextAuth = String.format("%s:%s", userName, password);
-//        result = "Basic " + Base64Utils.encodeToString(plainTextAuth.getBytes(UTF_8));
-//        System.err.println(result);
-//        return result;
-//    }
+        Person person = new Person("qhfkuw3hefuejwf", "Juan");
+        webTestClient.post().uri("/people").contentType(MediaType.APPLICATION_JSON)
+                .body(fromValue(person))
+                .exchange()
+                .expectStatus().isCreated()
+                .returnResult(String.class).getResponseBody().subscribe(r-> log.error(r));
 
-    ExchangeFilterFunction logRequest() {
-        return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-            if (log.isDebugEnabled()) {
-                StringBuilder sb = new StringBuilder("Request: \n");
-                sb.append("\n      url: " + clientRequest.url());
-                sb.append("\n   method: " + clientRequest.method());
-                sb.append("\n     body: " + clientRequest.body());
-                sb.append("\n  headers: " + clientRequest.body());
-                clientRequest
-                        .headers()
-                        .forEach((name, values) -> values.forEach(value -> sb.append("\n     " + name + ":" + value)));
-                log.debug(sb.toString());
-            }
-            return Mono.just(clientRequest);
-        });
-    }
-    ExchangeFilterFunction logResponse() {
-        return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
-            if (log.isDebugEnabled()) {
-                StringBuilder sb = new StringBuilder("Response: \n");
-                sb.append("\n  status: " + clientResponse.statusCode());
-                sb.append("\n    body: " + clientResponse.bodyToMono(Person.class).block());
-                log.debug(sb.toString());
-            }
-            return Mono.just(clientResponse);
-        });
+        personRepository.findAll().subscribe(p -> log.info(p.getName()));
+        personRepository.findById("qhfkuw3hefuejwf").subscribe(p -> assertThat(p.getName()).isEqualTo("Juan"), t -> fail("OOOPS " + t));
     }
 }
