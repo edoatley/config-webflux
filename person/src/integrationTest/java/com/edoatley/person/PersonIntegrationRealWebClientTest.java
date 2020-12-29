@@ -70,16 +70,11 @@ class PersonIntegrationRealWebClientTest {
                 .body(fromValue(JUAN))
                 .retrieve()
                 .bodyToMono(Person.class)
-                .subscribe(p ->  equals(p, JUAN), t -> fail("OOOPS " + t.getMessage()));
+                .subscribe(p ->  assertThat(p).isEqualTo(JUAN), t -> fail("OOOPS " + t.getMessage()));
 
         webClient.get().uri("/people/qhfkuw3hefuejwf")
                 .retrieve()
                 .bodyToMono(Person.class)
-                .subscribe(p -> equals(p, JUAN));
-    }
-
-    private void equals(Person p1, Person p2) {
-        assertThat(p1.getId()).isEqualTo(p2.getId());
-        assertThat(p1.getName()).isEqualTo(p2.getName());
+                .subscribe(p -> assertThat(p).isEqualTo(JUAN));
     }
 }

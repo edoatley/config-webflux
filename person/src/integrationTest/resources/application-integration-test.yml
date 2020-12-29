@@ -10,12 +10,3 @@ spring:
   data:
     mongodb:
       port: 0
-#spring:
-#  data:
-#    mongodb:
-#      authentication-database: admin
-#      username: user1
-#      password: password1
-#      database: testppl
-#      port: 27077
-#      host: localhost
