@@ -1,10 +1,15 @@
 logging:
   level:
+#    root: DEBUG
     org.springframework.boot.autoconfigure.mongo.embedded: TRACE
     org.springframework.security: WARN
     reactor.netty.http.client: DEBUG
     org.mongodb.driver: DEBUG
     com.edoatley.person: DEBUG
+spring:
+  data:
+    mongodb:
+      port: 0
 #spring:
 #  data:
 #    mongodb:

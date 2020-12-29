@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
@@ -27,27 +28,35 @@ public class PersonHandler {
     public Mono<ServerResponse> createPerson(ServerRequest request) {
         log.info("Creating a person");
         Mono<Person> personMono = request.bodyToMono(Person.class);
-        return personMono.flatMap(person ->
-                ServerResponse.status(HttpStatus.CREATED)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(personRepository.insert(personMono), Person.class));
+        return ServerResponse.status(HttpStatus.CREATED)
+                .body(BodyInserters.fromPublisher(
+                        personMono.flatMap(personRepository::save), Person.class));
+//        return personMono.flatMap(person ->
+//                ServerResponse.status(HttpStatus.CREATED)
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .body(personRepository.insert(personMono), Person.class));
     }
-
 
     public Mono<ServerResponse> getPersonById(ServerRequest request) {
         log.info("Finding a person by id");
-        return ok().body(personRepository.findById(request.pathVariable("id")), Person.class);
+        return ok()
+                .body(BodyInserters.fromPublisher(
+                        personRepository.findById(request.pathVariable("id")), Person.class));
     }
 
     public Mono<ServerResponse> getAllPeople(ServerRequest serverRequest) {
         log.info("Finding all people");
-        return ok().body(personRepository.findAll(), Flux.class);
+        return ok()
+                .body(BodyInserters.fromPublisher(
+                        personRepository.findAll(), Person.class));
     }
 
     public Mono<ServerResponse> peopleByName(ServerRequest serverRequest) {
         log.debug("Finding person by name");
         String name = serverRequest.queryParam("name")
                 .orElseThrow(()->  new IllegalArgumentException("No name provided to search for"));
-        return ok().body(personRepository.findByName(name), Flux.class);
+        return ok()
+                .body(BodyInserters.fromPublisher(
+                        personRepository.findByName(name), Person.class));
     }
 }

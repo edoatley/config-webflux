@@ -44,7 +44,7 @@ class PersonRoutingTest {
 
         given(personRepository.findById(ED.getId())).willReturn(Mono.just(ED));
 
-        given(personRepository.insert(any(Publisher.class))).willReturn(Flux.just((JON)));
+        given(personRepository.save(any())).willReturn(Mono.just((JON)));
     }
 
     @Test
@@ -97,14 +97,12 @@ class PersonRoutingTest {
     @WithMockUser(username = "ed", roles = {"ADMIN"})
     @DisplayName("Add person as ADMIN")
     void testAddPerson() {
-        Person actual = webClient.post().uri("/people").contentType(MediaType.APPLICATION_JSON)
+        webClient.post().uri("/people").contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(JON))
                 .exchange()
                 .expectStatus().isCreated()
-                .returnResult(Person.class)
-                .getResponseBody().blockFirst();
-
-        assertThat(actual).isEqualTo(JON);
+                .expectBody(Person.class)
+                .isEqualTo(JON);
     }
 
     @Test

@@ -4,20 +4,23 @@ management:
       exposure:
         include: "*"
         
-#spring:
-#  data:
-#    mongodb:
-#      authentication-database: admin
-#      username: mongo
-#      password: ognom
-#      database: people
-#      port: 27017
-#      host: localhost
+spring:
+  data:
+    mongodb:
+      authentication-database: admin
+      username: mongo
+      password: ognom
+      database: people
+      port: 27017
+      host: localhost
 
 logging:
   level:
-    org.springframework.boot.web.embedded.netty: DEBUG
-    reactor.ipc.netty.http: DEBUG
-    org.springframework.http.server.reactive.ReactorHttpHandlerAdapter: DEBUG
-    org.mongodb.driver: DEBUG
-    org.springframework.security: WARN
+    root: DEBUG
+#    org.springframework.boot.web.embedded.netty: DEBUG
+#    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+#    reactor.ipc.netty.http: DEBUG
+#    org.springframework.http.server.reactive.ReactorHttpHandlerAdapter: DEBUG
+#    org.mongodb.driver: DEBUG
+#    org.springframework.http.codec.json: DEBUG
+#    org.springframework.security: WARN
