@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -23,7 +22,6 @@ import reactor.core.publisher.Mono;
 
 import static com.edoatley.person.util.TestData.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -43,8 +41,14 @@ class PersonRoutingTest {
         given(personRepository.findAll()).willReturn(Flux.just(ED, HANNAH, JON));
 
         given(personRepository.findById(ED.getId())).willReturn(Mono.just(ED));
+        given(personRepository.findById("BADid")).willReturn(Mono.empty());
 
         given(personRepository.save(any())).willReturn(Mono.just((JON)));
+
+        given(personRepository.findByName("ed")).willReturn(Flux.just((ED)));
+        given(personRepository.findByName("jon")).willReturn(Flux.just((JON)));
+        given(personRepository.findByName("hannah")).willReturn(Flux.just((HANNAH)));
+        given(personRepository.findByName("dave")).willReturn(Flux.empty());
     }
 
     @Test
@@ -67,6 +71,16 @@ class PersonRoutingTest {
                 .expectBody(Person.class)
                 .isEqualTo(ED);
     }
+
+    @Test
+    @WithMockUser(username = "bob", roles = {"BASIC"})
+    @DisplayName("Fetch person by non-existent id")
+    public void testGetByBadId() {
+        webClient.get().uri("/people/" + "BADid")
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
     @Test
     @DisplayName("Fetch person by id requires BASIC")
     public void testGetByIdRequiresBasic() {
@@ -136,4 +150,45 @@ class PersonRoutingTest {
                 .expectBodyList(Person.class)
                 .contains(ED, HANNAH, JON);
     }
+
+    @Test
+    @WithMockUser(username = "bob", roles = {"BASIC"})
+    @DisplayName("Fetch person ed by name")
+    public void testGetByNameFound1() {
+        webClient.get().uri(uriBuilder -> uriBuilder.path("/people").queryParam("name", "ed").build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Person.class)
+                .contains(ED);
+    }
+
+    @Test
+    @WithMockUser(username = "ed", roles = {"ADMIN"})
+    @DisplayName("Fetch person hannah by name")
+    public void testGetByNameFound2() {
+        webClient.get().uri(uriBuilder -> uriBuilder.path("/people").queryParam("name", "hannah").build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(Person.class)
+                .contains(HANNAH);
+    }
+
+    @Test
+    @WithMockUser(username = "ed", roles = {"ADMIN"})
+    @DisplayName("Fetch person dave who does not exist by name")
+    public void testGetByNameNotFound() {
+        webClient.get().uri(uriBuilder -> uriBuilder.path("/people").queryParam("name", "dave").build())
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    @WithMockUser(username = "tim")
+    @DisplayName("Fetch person ed without authority")
+    public void testGetByNameNotAuthorised() {
+        webClient.get().uri(uriBuilder -> uriBuilder.path("/people").queryParam("name", "ed").build())
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
 }
