@@ -21,6 +21,7 @@ import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.web.reactive.function.BodyInserters.fromValue;
@@ -41,9 +42,6 @@ class PersonIntegrationRealWebClientTest {
 
     private WebClient webClient;
 
-    @Autowired
-    PersonRepository personRepository;
-
     @BeforeEach
     void setupWebClient() {
         webClient = WebClient.create("http://localhost:"+ port);
@@ -52,7 +50,7 @@ class PersonIntegrationRealWebClientTest {
     @Test
     @DisplayName("Save and retrieve person by id")
     @WithMockUser(username = "ed", roles = {"ADMIN"})
-    void saveAPerson() {
+    void saveAPersonAndGetById() {
         webClient.post().uri("/people").contentType(MediaType.APPLICATION_JSON)
                 .body(fromValue(JUAN))
                 .retrieve()
@@ -70,7 +68,7 @@ class PersonIntegrationRealWebClientTest {
     @Test
     @DisplayName("Save and retrieve person by name")
     @WithMockUser(username = "ed", roles = {"ADMIN"})
-    void saveAPerson2() {
+    void savePersonAndGetByName() {
         webClient.post().uri("/people").contentType(MediaType.APPLICATION_JSON)
                 .body(fromValue(LIZ))
                 .retrieve()
@@ -85,6 +83,31 @@ class PersonIntegrationRealWebClientTest {
                 .subscribe(checkPersonIs(LIZ), error());
     }
 
+    @Test
+    @DisplayName("Save two people then retrieve them")
+    @WithMockUser(username = "ed", roles = {"ADMIN"})
+    void savePeopleAndGetAll() {
+        webClient.post().uri("/people").contentType(MediaType.APPLICATION_JSON)
+                .body(fromValue(LIZ))
+                .retrieve()
+                .onStatus(HttpStatus::isError, error -> fail("Failed posting Liz " + error.statusCode()))
+                .bodyToMono(Person.class)
+                .subscribe(checkPersonIs(LIZ), error());
+
+        webClient.post().uri("/people").contentType(MediaType.APPLICATION_JSON)
+                .body(fromValue(DAVE))
+                .retrieve()
+                .onStatus(HttpStatus::isError, error -> fail("Failed posting Dave " + error.statusCode()))
+                .bodyToMono(Person.class)
+                .subscribe(checkPersonIs(DAVE), error());
+
+        webClient.get().uri("/people")
+                .retrieve()
+                .onStatus(HttpStatus::isError, error -> fail("Failed fetching all people dave & Liz" + error.statusCode()))
+                .bodyToFlux(Person.class)
+                .collect(Collectors.toList())
+                .subscribe(l -> assertThat(l).containsExactlyInAnyOrder(LIZ, DAVE), error());
+    }
 
     private Consumer<Person> checkPersonIs(Person expectedPerson) {
         return p -> assertThat(p).isEqualTo(expectedPerson);

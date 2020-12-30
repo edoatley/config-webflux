@@ -13,8 +13,6 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 
 import static org.springframework.web.reactive.function.server.ServerResponse.notFound;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
@@ -24,7 +22,9 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ok
 public class PersonHandler {
 
     private static final Logger log = LoggerFactory.getLogger(PersonHandler.class);
-    public static final Scheduler APPLICATION_SCHEDULER = Schedulers.boundedElastic();
+    // TODO: look at whether this is valuable. Could inclide and add the `.subscribeOn(APPLICATION_SCHEDULER)`
+    //       to each of the handler methods
+//    public static final Scheduler APPLICATION_SCHEDULER = Schedulers.boundedElastic();
 
     private final PersonRepository personRepository;
 
@@ -33,10 +33,8 @@ public class PersonHandler {
         log.info("Creating a person");
         Mono<Person> personMono = request.bodyToMono(Person.class);
         return ServerResponse.status(HttpStatus.CREATED)
-                    .body(personMono.flatMap(personRepository::save), Person.class)
-//                .body(BodyInserters.fromPublisher(
-//                        personMono.flatMap(personRepository::save), Person.class))
-                .subscribeOn(APPLICATION_SCHEDULER);
+                    .body(personMono.flatMap(personRepository::save), Person.class);
+
     }
 
     // TODO: trying to make not found scenario work. Seem to need to access the people mono
@@ -45,16 +43,14 @@ public class PersonHandler {
         log.info("Finding a person by id");
         Mono<Person> person = personRepository.findById(request.pathVariable("id"));
         return person.flatMap(p -> ok().body(person, Person.class))
-                .switchIfEmpty(notFound().build())
-                .subscribeOn(APPLICATION_SCHEDULER);
+                .switchIfEmpty(notFound().build());
     }
 
     public Mono<ServerResponse> getAllPeople(ServerRequest serverRequest) {
         log.info("Finding all people");
         return ok()
                 .body(BodyInserters.fromPublisher(
-                        personRepository.findAll(), Person.class))
-                .subscribeOn(APPLICATION_SCHEDULER);
+                        personRepository.findAll(), Person.class));
     }
 
     public Mono<ServerResponse> peopleByName(ServerRequest serverRequest) {
@@ -71,7 +67,7 @@ public class PersonHandler {
                     } else {
                         return notFound().build();
                     }
-                }).subscribeOn(APPLICATION_SCHEDULER);
+                });
     }
 
     // TODO: can we write a function to make the found / not found logic read nicely and avoid duplication
